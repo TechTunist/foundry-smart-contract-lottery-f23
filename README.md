@@ -1,3 +1,18 @@
+
+## Goals for this repository:
+
+Create a proveably random smart contract lottery
+
+1. Users can enter by paying for a ticket
+   1. The ticket fees are going to go to the winner during the draw
+2. After a period of time, the lottery will automatically draw a winner
+   1. This will be done programmatically
+3. Using chainlink VRF & chainlink automation (VRF = verifiable randomness function)
+   1. chainlink VRF -> Randomness
+   2. Chanilink Automation -> Time based trigger
+
+
+############################################################################
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
