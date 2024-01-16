@@ -2,6 +2,12 @@
 
 pragma solidity ^0.8.18;
 
+import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+
+
+// /home/tunist/Blockchain/foundry-smart-contract-lottery-f23/src/Raffle.sol
+
 
 /**
  * @title A sample Raffle contract
@@ -11,20 +17,25 @@ pragma solidity ^0.8.18;
  */
 
 
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthToEnter(string message);
+    error Raffle__TransferFailed();
 
-    uint256 private constant REQUEST_CONFIRMATIONS = 3; // number of confirmations required
+    uint16 private constant REQUEST_CONFIRMATIONS = 3; // number of confirmations required
+    uint32 private constant NUM_WORDS = 1; // number of random words to be generated
 
     uint256 private immutable i_entranceFee; // entrance fee in wei
     uint256 private immutable i_interval; // duration of the lottery in seconds
-    address private immutable i_vrfCoordinator; // address of the VRF coordinator
+    VRFCoordinatorV2Interface private immutable i_vrfCoordinator; // address of the VRF coordinator
     bytes32 private immutable i_gasLane; // gas lane
     uint64 private immutable i_subscriptionId; // subscription id
+    uint32 private immutable i_callbackGasLimit; // gas limit for the callback function
 
     uint256 private s_lastTimeStamp; // timestamp to be compared
 
     address payable[] private s_players;
+
+    address private s_recentWinner;
 
     /** Events */
     event EnteredRaffle (address indexed player);
@@ -34,14 +45,16 @@ contract Raffle {
         uint256 interval,
         address vrfCoordinator,
         bytes32 gasLane,
-        uint64 subscriptionId
-        ) {
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+        ) VRFConsumerBaseV2(vrfCoordinator) {
             i_entranceFee = entranceFee;
             i_interval = interval;
             s_lastTimeStamp = block.timestamp;
-            i_vrfCoordinator = vrfCoordinator;
+            i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
             i_gasLane = gasLane;
             i_subscriptionId = subscriptionId;
+            i_callbackGasLimit = callbackGasLimit;
         } 
     
     function enterRaffle() external payable{
@@ -62,10 +75,21 @@ contract Raffle {
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane, // gas lane
             i_subscriptionId, // the deployed subscription contract
-            REQUEST_CONFIRMATIONS, // 
-            callbackGasLimit,
-            numWords
+            REQUEST_CONFIRMATIONS,
+            i_callbackGasLimit,
+            NUM_WORDS
         );
+    }
+
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+        address payable winner = s_players[indexOfWinner];
+
+        s_recentWinner = winner;
+        (bool success,) = winner.call{value: address(this).balance}("");
+        if (!success) {
+            revert Raffle__TransferFailed();
+        }
     }
 
     /** Getter Functions */
