@@ -20,7 +20,15 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthToEnter(string message);
     error Raffle__TransferFailed();
+    error Raffle__RaffleNotOpen();
 
+    /** Type Declarations */
+    enum RaffleState {
+        OPEN,       // 0
+        CALCULATING // 1
+        }
+
+    /** State Variables */
     uint16 private constant REQUEST_CONFIRMATIONS = 3; // number of confirmations required
     uint32 private constant NUM_WORDS = 1; // number of random words to be generated
 
@@ -32,10 +40,10 @@ contract Raffle is VRFConsumerBaseV2 {
     uint32 private immutable i_callbackGasLimit; // gas limit for the callback function
 
     uint256 private s_lastTimeStamp; // timestamp to be compared
-
     address payable[] private s_players;
-
     address private s_recentWinner;
+
+    RaffleState private s_raffleState;
 
     /** Events */
     event EnteredRaffle (address indexed player);
@@ -55,11 +63,15 @@ contract Raffle is VRFConsumerBaseV2 {
             i_gasLane = gasLane;
             i_subscriptionId = subscriptionId;
             i_callbackGasLimit = callbackGasLimit;
+            s_raffleState = RaffleState.OPEN;
         } 
     
     function enterRaffle() external payable{
         if(msg.value < i_entranceFee) {
             revert Raffle__NotEnoughEthToEnter("Not enough ETH to enter");
+        }
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle__RaffleNotOpen();
         }
         s_players.push(payable(msg.sender));
         emit EnteredRaffle(msg.sender);
