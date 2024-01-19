@@ -18,7 +18,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 
 
 contract Raffle is VRFConsumerBaseV2 {
-    error Raffle__NotEnoughEthToEnter();
+    error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
     error Raffle__RaffleNotOpen();
 
@@ -75,7 +75,7 @@ contract Raffle is VRFConsumerBaseV2 {
     
     function enterRaffle() external payable{
         if(msg.value < i_entranceFee) {
-            revert Raffle__NotEnoughEthToEnter();
+            revert Raffle__NotEnoughEthSent();
         }
         if (s_raffleState != RaffleState.OPEN) {
             revert Raffle__RaffleNotOpen();
@@ -150,6 +150,20 @@ contract Raffle is VRFConsumerBaseV2 {
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
     }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getPlayersArray() external view returns (address payable[] memory) {
+        return s_players;
+    }
+
+    function getPlayer() external view returns (address) {
+        return s_players[0];
+    }
+    
+
 }
 
 // checks, effect, interactions
