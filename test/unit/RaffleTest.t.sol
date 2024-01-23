@@ -9,6 +9,10 @@ import {Test, console} from "lib/forge-std/src/Test.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
+
+    /** Events */
+    event EnteredRaffle (address indexed player);
+
     Raffle raffle;
     HelperConfig helperConfig;
 
@@ -72,4 +76,27 @@ contract RaffleTest is Test {
         address playerRecorded = raffle.getPlayer();
         assert(playerRecorded == PLAYER);
     }
+
+    function testEmitsEventOnEntry() public {
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit EnteredRaffle(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+    }
+
+    function testCantEnterWhenRaffleIsCalculating() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+
+        // move time forward to make the raffle calculate winner and close entry
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+
+    }
+
 }
