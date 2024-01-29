@@ -35,7 +35,7 @@ contract HelperConfig is Script {
             interval: 30,
             vrfCoordinator: 0x8C7382F9D8f56b33781fE506E897a4F1e2d17255,
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            subscriptionId: 0, // update this with our subscriptionID
+            subscriptionId: 8872, // update this with our subscriptionID
             callbackGasLimit: 500000,
             link: 0x779877A7B0D9E8603169DdbD7836e478b4624789
         });
